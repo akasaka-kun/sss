@@ -128,7 +128,7 @@ class Polymino:
             if not field.is_legal(self._rotated(angle)._kicked(k)):
                 continue
             else:
-                utilities.become(self, self._rotated(angle)._kicked(k))
+                utilities.become(self, self._rotated(angle)._kicked(k))  # todo can we fix it? NOPE! WHY THOUGH THERE IS A LEGALITY CHECK UP THERE.
         if ret: return self
 
 

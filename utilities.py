@@ -3,5 +3,4 @@ def flatten(t: list):
 
 
 def become(obj, obj2):
-    for k, v in obj.__dict__.items():
-        obj2.__dict__[k] = v
+    obj.__dict__.update(obj2.__dict__)
