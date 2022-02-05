@@ -1,6 +1,9 @@
+import copy
 import os.path
 import numpy as np
 import pygame.image
+
+import utilities
 from config import resources_path
 from typing import Dict, Sequence, Tuple, List
 
@@ -108,14 +111,24 @@ class Polymino:
         except IndexError:
             return True, oob_clip
 
-    def rotate(self, angle, field, ret=True):
+    def _kicked(self, kick):
+        ret = copy.deepcopy(self)
+        ret.pos += kick
+        return ret
+
+    def _rotated(self, angle):
+        ret = copy.deepcopy(self)
         if angle not in [90, -90, 180]: raise ValueError('can only rotate a polymino by 90, -90 or 180 degrees')
-        for i in self.kick_table.kicks[(self.angle, (self.angle + angle) % 360)]:
-            if self.is_clipping(field, kick=i):
+        ret.angle = self.angle + angle
+        ret.minos = np.add(([ret.pos] * len(self.rotation_table.rotations[ret.angle])), ret.rotation_table.r0)
+        return ret
+
+    def rotate(self, angle, field, ret=True):
+        for k in self.kick_table.kicks[(self.angle, (self.angle + angle) % 360)]:
+            if not field.is_legal(self._rotated(angle)._kicked(k)):
                 continue
             else:
-                self.pos += i
-                self.minos = np.add(([self.pos] * len(self.rotation_table.r0)), self.rotation_table.rotations[(self.angle + angle) % 360])
+                utilities.become(self, self._rotated(angle)._kicked(k))
         if ret: return self
 
 
