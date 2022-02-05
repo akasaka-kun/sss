@@ -120,7 +120,7 @@ class Polymino:
         ret = copy.deepcopy(self)
         if angle not in [90, -90, 180]: raise ValueError('can only rotate a polymino by 90, -90 or 180 degrees')
         ret.angle = self.angle + angle
-        ret.minos = np.add(([ret.pos] * len(self.rotation_table.rotations[ret.angle])), ret.rotation_table.r0)
+        ret.minos = np.add(([ret.pos] * len(self.rotation_table.rotations[ret.angle % 360])), ret.rotation_table.r0)
         return ret
 
     def rotate(self, angle, field, ret=True):
