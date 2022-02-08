@@ -20,7 +20,7 @@ class Keyboard:
                 continue
             match e.type:
                 case pygame.KEYDOWN:
-                    self.actions[self.controls[e.key]] = (True, self.actions.get(e.key, 0) + 1)
+                    self.actions[self.controls[e.key]] = (True, self.actions.get(self.controls[e.key], (False, 0))[1] + 1)
                 case pygame.KEYUP:
                     self.actions.pop(self.controls[e.key])
                 case _:
