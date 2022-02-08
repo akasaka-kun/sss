@@ -14,12 +14,11 @@ keyboard = Keyboard()
 
 # setup testing field
 field = Playfield()
-field.grid[1, 1] = Mino('R', True)
-i_timer = 0
 
 done = False
 while not done:
 
+    # event loop
     for e in pygame.event.get():
         if e.type == pygame.QUIT:
             done = True
@@ -27,15 +26,16 @@ while not done:
             keyboard.add_event(e)
     keyboard.update()
 
-    screen.fill(screen_bg)
-
+    # computing
+    # todo add queue
     field.clear_lines()
 
+    # rendering
+    screen.fill(screen_bg)
     field_size = screen_size * 0.8
     field_size[0] = 0.5 * field_size[1]
     screen.blit(field.render(field_size), screen_size * 0.1)
 
-    print(keyboard.actions)
     pygame.display.flip()
 
     clk.tick(60)
