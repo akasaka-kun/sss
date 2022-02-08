@@ -15,6 +15,15 @@ SDF = numpy.inf
 ARR = 0
 DAS = 7
 
+keyboard_controls = {
+    pygame.K_a: 'left',
+    pygame.K_d: 'right',
+    pygame.K_s: 'soft_drop',
+    pygame.K_SPACE: 'hard_drop',
+    pygame.K_LEFT: 'rotate_ccw',
+    pygame.K_RIGHT: 'rotate_cw',
+    pygame.K_DOWN: 'rotate_180'
+}
 
 class debug:
     grid_index = False
