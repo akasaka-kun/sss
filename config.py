@@ -27,4 +27,4 @@ keyboard_controls = {
 }
 
 class debug:
-    grid_index = False
+    grid_index = True

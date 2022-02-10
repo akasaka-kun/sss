@@ -1,6 +1,5 @@
 import random
 import typing
-
 import pygame
 import Controllers
 import tetrominos
@@ -18,6 +17,8 @@ keyboard1 = Keyboard()
 
 # setup testing field
 field = Playfield(keyboard1)
+field.initialize()
+field.update(place=True)
 
 done = False
 while not done:
@@ -34,6 +35,7 @@ while not done:
 
     # computing
     # todo add queue
+    field.update()
     field.clear_lines()
 
     # rendering
