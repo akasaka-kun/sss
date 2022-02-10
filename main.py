@@ -1,19 +1,23 @@
 import random
+import typing
+
 import pygame
+import Controllers
 import tetrominos
 import utilities
+from typing import List
 from config import screen, screen_bg, screen_size
 from grid import Playfield
 from tetrominos import Mino
-from keyboard import Keyboard
+from Controllers import Keyboard
 
 pygame.init()
 
 clk = pygame.time.Clock()
-keyboard = Keyboard()
+keyboard1 = Keyboard()
 
 # setup testing field
-field = Playfield()
+field = Playfield(keyboard1)
 
 done = False
 while not done:
@@ -23,8 +27,10 @@ while not done:
         if e.type == pygame.QUIT:
             done = True
         if e.type in (pygame.KEYUP, pygame.KEYDOWN):
-            keyboard.add_event(e)
-    keyboard.update()
+            for K in Keyboard.instances:
+                K.add_event(e)
+    for K in Keyboard.instances:
+        K.update()
 
     # computing
     # todo add queue

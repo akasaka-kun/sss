@@ -24,9 +24,12 @@ class Playfield:
     gridlines_color = (64, 64, 64, 80)
     gridlines_thickness = 1 / 500
 
-    def __init__(self):
+    def __init__(self, controller):
         self.grid_size = Playfield.DefaultSize
         self.grid = Mino_array(self.grid_size)
+
+        self.queue = []
+        self.controller = controller
 
     def render(self, size):
         size = np.array(size) * 2
@@ -87,6 +90,12 @@ class Playfield:
         for y, l in enumerate(self.grid.transpose()):
             if all(m.placed for m in l):
                 self.grid = np.array([Mino_array(Playfield.DefaultSize[0]), *self.grid.transpose()[:y], *self.grid.transpose()[y + 1:]]).transpose()
+
+    def initialize(self):
+        pass
+
+    def update(self):
+        pass
 
     def __repr__(self):
         return repr(self.grid.transpose())

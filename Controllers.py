@@ -1,15 +1,16 @@
 import warnings
 import pygame
-
 import config
 
 
 class Keyboard:
+    instances = []
 
     def __init__(self):
         self.actions = {}
         self.events = []
         self.controls = config.keyboard_controls
+        Keyboard.instances.append(self)
 
     def add_event(self, event):
         self.events.append(event)
