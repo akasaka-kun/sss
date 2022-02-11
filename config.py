@@ -14,7 +14,7 @@ screen_bg = (32, 32, 32)
 SDF = numpy.inf
 ARR = 0
 DAS = 7
-APT = 120  # auto place timer
+APT = 60  # auto place timer
 
 keyboard_controls = {
     pygame.K_a: 'left',
@@ -26,5 +26,6 @@ keyboard_controls = {
     pygame.K_DOWN: 'rotate_180'
 }
 
+
 class debug:
-    grid_index = True
+    grid_index = False

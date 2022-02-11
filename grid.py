@@ -6,6 +6,7 @@ from copy import copy
 
 import config
 import ptext
+from utilities import is_arr_in_list
 
 import tetrominos
 from tetrominos import Mino
@@ -35,10 +36,10 @@ class Playfield:
 
         # initialize fields
         self.APT = None
-        self.current_piece = None
         self.piece_floored = None
         self.gravity = None
         self.time = None
+        self.gravity_timer = None
 
     # noinspection PyShadowingNames
     def render(self, size):
@@ -60,9 +61,8 @@ class Playfield:
             pygame.draw.line(surf, Playfield.gridlines_color, ((y + 1) * (size[1] / self.grid_size[1]) + BT, BT), ((y + 1) * (size[1] / self.grid_size[1]) + BT, size[1] + BT), int(gridlines_thickness))
         for x, l in enumerate(self.grid):
             for y, j in enumerate(l):
-                surf.blit(j.render(np.array(size) / np.array(self.grid_size) + (GT / 2, GT / 2)), (x, y) * (np.array(size) / np.array(self.grid_size)) + (BT, BT))
+                surf.blit((j if not is_arr_in_list((x, y), self.current_piece.minos) else Mino(self.current_piece.color, True)).render(np.array(size) / np.array(self.grid_size) + (GT / 2, GT / 2)), (x, y) * (np.array(size) / np.array(self.grid_size)) + (BT, BT))
                 if config.debug.grid_index: ptext.draw(f'{x}, {y}', list(np.array([x, y]) * (np.array(size) / np.array(self.grid_size)) + (BT, BT)), surf=surf)  # debug
-
         return pygame.transform.smoothscale(surf, size / 2)
 
     def is_legal(self, polymino: tetrominos.Polymino, excepted=None):  # todo why are polymino still being wrapped round the grid x wise
@@ -73,9 +73,10 @@ class Playfield:
         """
         for m in polymino.minos:
             try:
+                print(m in excepted, self.grid[tuple(m)] != Mino())
                 if self.grid[tuple(m)] != Mino() and m not in excepted:
                     return False
-            except KeyError:
+            except IndexError:
                 return False
         return True
 
@@ -118,33 +119,34 @@ class Playfield:
         if pop: self.queue.pop(0)
         if len(self.queue) == 0:
             self.init_queue()
-        self.current_piece = self.queue[0]
         self.time = 0
-        self.gravity = 50
+        self.gravity_timer = self.time
+        self.gravity = 10  # todo put in config
         self.APT = config.APT
 
     def update(self, place=False):
         self.time += 1
-        current_piece = self.queue[0]
-
-        if place:
-            self.place_polymino(current_piece)
+        self.gravity_timer += 1
 
         if self.piece_floored and self.APT <= 0:
             # place piece down
             self.place_polymino(self.current_piece, solid=True, definitive=True)
             self.init_new_piece(pop=True)
+            print(self.grid)
 
-        if self.time >= self.gravity or self.piece_floored:
+        if self.gravity_timer >= self.gravity or self.piece_floored:
             if self.piece_floored:
                 self.APT -= 1
 
-            moved = current_piece.move((0, 1), self)  # todo i think there is still a problem with the coordinate system or some shit
+            moved = self.current_piece.move((0, 1), self)  # todo i think there is still a problem with the coordinate system or some shit
             if moved is None: self.piece_floored = True
             else:
-                for i in current_piece.moved((0, -1)).minos:
-                    self.erase_mino(i)
-                    self.place_polymino(current_piece)
+                self.gravity_timer = 0
+                self.piece_floored = False
+
+    @property
+    def current_piece(self):
+        return self.queue[0]
 
     def __repr__(self):
         return repr(self.grid.transpose())

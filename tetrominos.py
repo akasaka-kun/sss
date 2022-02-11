@@ -2,6 +2,7 @@ import copy
 import os.path
 import numpy as np
 import pygame.image
+from numpy import array_equal
 
 import utilities
 from config import resources_path
@@ -95,10 +96,13 @@ class Polymino:
         if len(pos) != 2: raise ValueError('pos needs to be a 2 item sequence')
         self.pos = np.array(pos)
         self.color = color
-        self.minos = np.add(([pos] * len(rotation_table.r0)), rotation_table.r0)
         self.angle = 0
         self.rotation_table = rotation_table
         self.kick_table = kick_table
+
+    @property
+    def minos(self):
+        return np.add(([self.pos] * len(self.rotation_table.rotations[self.angle])), self.rotation_table.rotations[self.angle])
 
     def is_clipping(self, field, kick=None):
         if kick is None: kick = [0, 0]
@@ -130,7 +134,7 @@ class Polymino:
         return ret
 
     def move(self, movement, field, ret=True):
-        if field.is_legal(self.moved(movement), excepted=self.minos):
+        if field.is_legal(self.moved(movement), excepted=[elem for elem in self.minos if array_equal(elem, self.moved(movement).minos)]):
             self.pos += movement
         else:
             return None
