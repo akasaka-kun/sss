@@ -2,7 +2,6 @@ import random
 import re
 import warnings
 
-import numpy
 import pygame
 import numpy as np
 from copy import copy
@@ -39,6 +38,7 @@ class Playfield:
         self.controller: Controllers.Controller = controller
 
         # initialize fields
+        self.SD_timer = None
         self.DAS_charge = None
         self.ARR_timer = None
         self.APT = None
@@ -128,6 +128,7 @@ class Playfield:
         self.gravity = config.gravity  # todo put in config
         self.APT = self.gravity  # todo if init new piece fails induce game over
         self.ARR_timer = 0
+        self.SD_timer = 0
         self.DAS_charge = False
 
     def move_lr(self, direction, held):
@@ -143,6 +144,25 @@ class Playfield:
                 if self.ARR_timer == config.ARR:
                     self.ARR_timer = 0
                     self.current_piece.move(direction, self)
+
+    def drop_piece(self, type_):
+        match type_:
+            case 'soft':
+                if np.isinf(config.SDF):
+                    while True:
+                        moved = self.current_piece.move((0, 1), self)
+                        if moved is None: break
+                else:
+                    self.SD_timer += 1
+                    if self.SD_timer == config.SDF:
+                        self.SD_timer = 0
+                        self.current_piece.move((0, 1), self)
+            case 'hard':
+                while True:
+                    moved = self.current_piece.move((0, 1), self)
+                    if moved is None: break
+                self.place_polymino(self.current_piece, definitive=True)
+                self.init_new_piece(pop=True)
 
     def update(self, place=False):
         self.time += 1
@@ -161,7 +181,7 @@ class Playfield:
             if any([v[0] and v[1] > config.DAS for k, v in self.controller.actions.items() if k in ('left', 'right')]): self.DAS_charge = True
             else: self.DAS_charge = False
         # actual control
-        for action, held in self.controller.actions.items():  # todo implement all actions
+        for action, held in self.controller.actions.items():
             match action.split('_'):
                 case ['left']:
                     self.move_lr((-1, 0), held)
@@ -170,10 +190,11 @@ class Playfield:
                 case [type_, 'drop']:
                     match type_:
                         case 'soft':
-                            pass
+                            self.drop_piece('soft')
                         case 'hard':
-                            pass
-                case ['rotate', angle]:
+                            if not held[0]:
+                                self.drop_piece('hard')
+                case ['rotate', angle]:  # todo LA GROSSE DONDON, LA ROTATION!
                     print(f'rotation of angle {angle}')
 
         # gravity step
