@@ -65,7 +65,7 @@ class Playfield:
                 if config.debug.grid_index: ptext.draw(f'{x}, {y}', list(np.array([x, y]) * (np.array(size) / np.array(self.grid_size)) + (BT, BT)), surf=surf)  # debug
         return pygame.transform.smoothscale(surf, size / 2)
 
-    def is_legal(self, polymino: tetrominos.Polymino, excepted=None):  # todo why are polymino still being wrapped round the grid x wise
+    def is_legal(self, polymino: tetrominos.Polymino, excepted=None):  # todo why are polymino still being wrapped round the grid x wise - are they still doing it?
         """
         :param excepted:
         :param polymino: any polymino
@@ -122,7 +122,7 @@ class Playfield:
         self.time = 0
         self.gravity_timer = self.time
         self.gravity = 10  # todo put in config
-        self.APT = config.APT
+        self.APT = self.gravity  # todo if init new piece fails induce game over
 
     def update(self, place=False):
         self.time += 1

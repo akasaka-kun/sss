@@ -14,7 +14,6 @@ screen_bg = (32, 32, 32)
 SDF = numpy.inf
 ARR = 0
 DAS = 7
-APT = 60  # auto place timer
 
 keyboard_controls = {
     pygame.K_a: 'left',
