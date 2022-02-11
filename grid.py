@@ -131,7 +131,6 @@ class Playfield:
         self.DAS_charge = False
 
     def move_lr(self, direction, held):
-        print('move', held)
         if not held[0]:
             self.current_piece.move(direction, self)
         if self.DAS_charge:
@@ -155,14 +154,14 @@ class Playfield:
         # control step
         # DAS charge
         if config.cancel_DAS_charge:
-            for v in {k: v for k, v in self.controller.actions.items() if k in 'leftright'}.values():
+            for v in {k: v for k, v in self.controller.actions.items() if k in ('left', 'right')}.values():
                 if v[0] and v[1] > config.DAS: self.DAS_charge = True
                 else: self.DAS_charge = False
         else:
-            if any([v[0] and v[1] > config.DAS for k, v in self.controller.actions.items() if k in 'leftright']): self.DAS_charge = True
+            if any([v[0] and v[1] > config.DAS for k, v in self.controller.actions.items() if k in ('left', 'right')]): self.DAS_charge = True
             else: self.DAS_charge = False
         # actual control
-        for action, held in self.controller.actions.items():  # todo implement all actions imma pee
+        for action, held in self.controller.actions.items():  # todo implement all actions
             match action.split('_'):
                 case ['left']:
                     self.move_lr((-1, 0), held)

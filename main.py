@@ -27,11 +27,9 @@ while not done:
     for e in pygame.event.get():
         if e.type == pygame.QUIT:
             done = True
-        for Cs in Controllers.Controller.__subclasses__():
-            for I in Cs.instances:
-                I.add_event(e)
-    for K in Keyboard.instances:
-        K.update()
+    for Cs in Controllers.Controller.__subclasses__():
+        for I in Cs.instances:
+            I.update()
 
     # computing
     # todo add queue

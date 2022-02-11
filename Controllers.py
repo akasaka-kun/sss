@@ -5,29 +5,24 @@ import config
 
 class Controller:
 
-    def __init__(self, controls, instances):
+    def __init__(self, controller, controls, instances):
+        self.controller = controller
         self.actions = {}
-        self.events = []
         self.controls = controls
         instances.append(self)
-
-    def add_event(self, event):
-        self.events.append(event)
 
 
 class Keyboard(Controller):
     instances = []
 
     def __init__(self):
-        super(Keyboard, self).__init__(config.keyboard_controls, self.__class__.instances)
+        super(Keyboard, self).__init__('Keyboard', config.keyboard_controls, self.__class__.instances)
 
     def update(self):
-        for e in self.events:
-            if getattr(e, 'key', None) not in self.controls: continue
-            match e.type:
-                case pygame.KEYDOWN:
-                    held = self.actions.get(self.controls[e.key], (False, 0))[1] + 1
-                    self.actions[self.controls[e.key]] = (bool(self.actions.get(self.controls[e.key], False)), held)
-                case pygame.KEYUP:
-                    self.actions.pop(self.controls[e.key])
-                    self.events = [ev for ev in self.events if ev.type not in (pygame.KEYDOWN, pygame.KEYUP) and getattr(e, 'key', None) != e.key]
+        for k, c in self.controls.items():
+            if pygame.key.get_pressed()[k]:
+                state = self.actions.get(c, [False, 0])
+                hold_time = state[1] + 1
+                self.actions[c] = (bool(hold_time - 1), hold_time)
+            elif self.actions.get(c, False):
+                self.actions.pop(c)
