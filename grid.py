@@ -1,6 +1,8 @@
 import random
 import re
 import warnings
+
+import numpy
 import pygame
 import numpy as np
 from copy import copy
@@ -37,6 +39,8 @@ class Playfield:
         self.controller: Controllers.Controller = controller
 
         # initialize fields
+        self.DAS_charge = None
+        self.ARR_timer = None
         self.APT = None
         self.piece_floored = None
         self.gravity = None
@@ -75,8 +79,7 @@ class Playfield:
         """
         for m in polymino.minos:
             try:
-                print(m in excepted, self.grid[tuple(m)] != Mino())
-                if self.grid[tuple(m)] != Mino() and m not in excepted:
+                if self.grid[tuple(m)] != Mino() or any(n < 0 for n in m) and m not in excepted:
                     return False
             except IndexError:
                 return False
@@ -115,7 +118,6 @@ class Playfield:
     def init_queue(self, empty=False, shuffle=True):
         self.queue = [piece(piece.spawn_pos) for piece in self.type_.pieces.copy()]
         if shuffle: random.shuffle(self.queue)
-        print(self.type_)
 
     def init_new_piece(self, pop=False):
         if pop: self.queue.pop(0)
@@ -125,6 +127,23 @@ class Playfield:
         self.gravity_timer = self.time
         self.gravity = config.gravity  # todo put in config
         self.APT = self.gravity  # todo if init new piece fails induce game over
+        self.ARR_timer = 0
+        self.DAS_charge = False
+
+    def move_lr(self, direction, held):
+        print('move', held)
+        if not held[0]:
+            self.current_piece.move(direction, self)
+        if self.DAS_charge:
+            if config.ARR == 0:
+                while True:
+                    moved = self.current_piece.move(direction, self)
+                    if moved is None: break
+            else:
+                self.ARR_timer += 1
+                if self.ARR_timer == config.ARR:
+                    self.ARR_timer = 0
+                    self.current_piece.move(direction, self)
 
     def update(self, place=False):
         self.time += 1
@@ -134,16 +153,27 @@ class Playfield:
             self.gravity -= config.gravity_inc
 
         # control step
-        for action in self.controller.actions:
-            match action.split('-'):
-                case 'left':
-                    pass
-                case 'right':
-                    pass
-                case 'soft_drop':
-                    pass
-                case 'hard_drop':
-                    pass
+        # DAS charge
+        if config.cancel_DAS_charge:
+            for v in {k: v for k, v in self.controller.actions.items() if k in 'leftright'}.values():
+                if v[0] and v[1] > config.DAS: self.DAS_charge = True
+                else: self.DAS_charge = False
+        else:
+            if any([v[0] and v[1] > config.DAS for k, v in self.controller.actions.items() if k in 'leftright']): self.DAS_charge = True
+            else: self.DAS_charge = False
+        # actual control
+        for action, held in self.controller.actions.items():  # todo implement all actions imma pee
+            match action.split('_'):
+                case ['left']:
+                    self.move_lr((-1, 0), held)
+                case ['right']:
+                    self.move_lr((1, 0), held)
+                case [type_, 'drop']:
+                    match type_:
+                        case 'soft':
+                            pass
+                        case 'hard':
+                            pass
                 case ['rotate', angle]:
                     print(f'rotation of angle {angle}')
 
@@ -164,7 +194,6 @@ class Playfield:
             # place piece down
             self.place_polymino(self.current_piece, solid=True, definitive=True)
             self.init_new_piece(pop=True)
-            print(self.grid)
 
     @property
     def current_piece(self):

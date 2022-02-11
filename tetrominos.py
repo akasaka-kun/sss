@@ -36,7 +36,6 @@ class Color_set(dict):
             if not solid:
                 texture.set_alpha(128)
             self.texture_dict[(color, size, solid)] = texture
-            print(self.texture_dict__repr__())
             return texture
 
 
