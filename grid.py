@@ -1,9 +1,11 @@
 import random
+import re
 import warnings
 import pygame
 import numpy as np
 from copy import copy
 
+import Controllers
 import config
 import ptext
 from utilities import is_arr_in_list
@@ -32,7 +34,7 @@ class Playfield:
 
         self.type_ = type_
         self.queue = []
-        self.controller = controller
+        self.controller: Controllers.Controller = controller
 
         # initialize fields
         self.APT = None
@@ -65,7 +67,7 @@ class Playfield:
                 if config.debug.grid_index: ptext.draw(f'{x}, {y}', list(np.array([x, y]) * (np.array(size) / np.array(self.grid_size)) + (BT, BT)), surf=surf)  # debug
         return pygame.transform.smoothscale(surf, size / 2)
 
-    def is_legal(self, polymino: tetrominos.Polymino, excepted=None):  # todo why are polymino still being wrapped round the grid x wise - are they still doing it?
+    def is_legal(self, polymino: tetrominos.Polymino, excepted=None):
         """
         :param excepted:
         :param polymino: any polymino
@@ -121,28 +123,48 @@ class Playfield:
             self.init_queue()
         self.time = 0
         self.gravity_timer = self.time
-        self.gravity = 10  # todo put in config
+        self.gravity = config.gravity  # todo put in config
         self.APT = self.gravity  # todo if init new piece fails induce game over
 
     def update(self, place=False):
         self.time += 1
         self.gravity_timer += 1
+        # gravity increase
+        if self.time > config.gravity_inc_timer:
+            self.gravity -= config.gravity_inc
 
-        if self.piece_floored and self.APT <= 0:
-            # place piece down
-            self.place_polymino(self.current_piece, solid=True, definitive=True)
-            self.init_new_piece(pop=True)
-            print(self.grid)
+        # control step
+        for action in self.controller.actions:
+            match action.split('-'):
+                case 'left':
+                    pass
+                case 'right':
+                    pass
+                case 'soft_drop':
+                    pass
+                case 'hard_drop':
+                    pass
+                case ['rotate', angle]:
+                    print(f'rotation of angle {angle}')
 
+        # gravity step
         if self.gravity_timer >= self.gravity or self.piece_floored:
             if self.piece_floored:
                 self.APT -= 1
 
             moved = self.current_piece.move((0, 1), self)  # todo i think there is still a problem with the coordinate system or some shit
-            if moved is None: self.piece_floored = True
+            if moved is None:
+                self.piece_floored = True
             else:
                 self.gravity_timer = 0
                 self.piece_floored = False
+
+        # soft placement
+        if self.piece_floored and self.APT <= 0:
+            # place piece down
+            self.place_polymino(self.current_piece, solid=True, definitive=True)
+            self.init_new_piece(pop=True)
+            print(self.grid)
 
     @property
     def current_piece(self):

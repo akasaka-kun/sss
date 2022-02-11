@@ -3,14 +3,20 @@ import pygame
 import config
 
 
-class Keyboard:
+class Controller:
+
+    def __init__(self, controls, instances):
+        self.actions = {}
+        self.events = []
+        self.controls = controls
+        instances.append(self)
+
+
+class Keyboard(Controller):
     instances = []
 
     def __init__(self):
-        self.actions = {}
-        self.events = []
-        self.controls = config.keyboard_controls
-        Keyboard.instances.append(self)
+        super(Keyboard, self).__init__(config.keyboard_controls, self.__class__.instances)
 
     def add_event(self, event):
         self.events.append(event)
