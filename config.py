@@ -12,7 +12,7 @@ screen_bg = (32, 32, 32)
 
 # gameplay constants
 # handling todo make player profiles
-SDF = 2 #  numpy.inf
+SDF = 2  # numpy.inf
 ARR = 0
 DAS = 7
 cancel_DAS_charge = True
@@ -20,7 +20,6 @@ cancel_DAS_charge = True
 gravity = 50
 gravity_inc = 0.005
 gravity_inc_timer = 3600
-
 
 # controls
 keyboard_controls = {
@@ -30,7 +29,8 @@ keyboard_controls = {
     pygame.K_SPACE: 'hard_drop',
     pygame.K_LEFT: 'rotate_ccw',
     pygame.K_RIGHT: 'rotate_cw',
-    pygame.K_UP: 'rotate_180'
+    pygame.K_UP: 'rotate_180',
+    pygame.KMOD_SHIFT: 'hold'
 }
 
 

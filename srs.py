@@ -131,3 +131,6 @@ class O(Tetromino):
 
 
 srs.pieces = [T, S, Z, L, J, O, I]
+
+
+

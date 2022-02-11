@@ -101,7 +101,7 @@ class Polymino:
 
     @property
     def minos(self):
-        return np.add(([self.pos] * len(self.rotation_table.rotations[self.angle])), self.rotation_table.rotations[self.angle])
+        return np.add(([self.pos] * len(self.rotation_table.rotations[self.angle % 360])), self.rotation_table.rotations[self.angle % 360])
 
     def is_clipping(self, field, kick=None):
         if kick is None: kick = [0, 0]
@@ -117,14 +117,13 @@ class Polymino:
 
     def kicked(self, kick):
         ret = copy.deepcopy(self)
-        ret.pos += kick
+        ret.pos += kick[0], -kick[1]  # todo this is a terrible workaround to the fact that the kick table is made for y up coordinates
         return ret
 
     def rotated(self, angle):
         ret = copy.deepcopy(self)
         if angle not in [90, -90, 180]: raise ValueError('can only rotate a polymino by 90, -90 or 180 degrees')
-        ret.angle = self.angle + angle
-        ret.minos = np.add(([ret.pos] * len(self.rotation_table.rotations[ret.angle % 360])), ret.rotation_table.r0)
+        ret.angle = (self.angle + angle) % 360
         return ret
 
     def moved(self, movement):
@@ -140,11 +139,15 @@ class Polymino:
         if ret: return self
 
     def rotate(self, angle, field, ret=True):
-        for k in self.kick_table.kicks[(self.angle, (self.angle + angle) % 360)]:
-            if not field.is_legal(self.rotated(angle).kicked(k)):
-                continue
-            else:
-                utilities.become(self, self.rotated(angle).kicked(k))  # todo --can we fix it? NOPE! WHY THOUGH THERE IS A LEGALITY CHECK UP THERE.-- did i fix it?
+        try:
+            for k in self.kick_table.kicks[(self.angle, (self.angle + angle) % 360)]:
+                if not field.is_legal(self.rotated(angle).kicked(k)):
+                    continue
+                else:
+                    utilities.become(self, self.rotated(angle).kicked(k))
+                    break
+        except KeyError:
+            if field.is_legal(self.rotated(angle)): utilities.become(self, self.rotated(angle))
         if ret: return self
 
 

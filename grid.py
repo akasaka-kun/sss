@@ -83,6 +83,8 @@ class Playfield:
                     return False
             except IndexError:
                 return False
+            except TypeError:
+                print(polymino.minos, polymino.pos, polymino.angle)
         return True
 
     def place_polymino(self, polymino: tetrominos.Polymino, solid=True, definitive=False, ret=False):
@@ -194,8 +196,11 @@ class Playfield:
                         case 'hard':
                             if not held[0]:
                                 self.drop_piece('hard')
-                case ['rotate', angle]:  # todo LA GROSSE DONDON, LA ROTATION!
-                    print(f'rotation of angle {angle}')
+                case ['rotate', angle]:  # je crois avoir réussi?
+                    if not held[0]:
+                        self.current_piece.rotate({'cw': 90, 'ccw': -90, '180': 180}[angle], self)
+                case ['hold']:  # todo ok either this one is the worst or it's ultra easy either way i need to add queue and hold to the renderer
+                    pass
 
         # gravity step
         if self.gravity_timer >= self.gravity or self.piece_floored:
