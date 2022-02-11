@@ -181,7 +181,7 @@ class Playfield:
             if self.piece_floored:
                 self.APT -= 1
 
-            moved = self.current_piece.move((0, 1), self)  # todo i think there is still a problem with the coordinate system or some shit
+            moved = self.current_piece.move((0, 1), self)
             if moved is None:
                 self.piece_floored = True
             else:
