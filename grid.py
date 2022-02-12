@@ -89,7 +89,7 @@ class Playfield:
             pygame.display.get_surface().blit(mino.render(mino_size // 2), (field_pos + (BT, BT) + relative_pos_to_field) // 2)
             if config.debug.grid_index: ptext.draw(f'{pos}', list(np.array(pos) * (np.array(PFsize) / np.array(self.grid_size)) + (BT, BT)), surf=surf)  # debug
 
-    def is_legal(self, polymino: tetrominos.Polymino, excepted=None):  # todo this is less broke
+    def is_legal(self, polymino: tetrominos.Polymino, excepted=None):
         """
         :param excepted:
         :param polymino: any polymino
@@ -134,14 +134,14 @@ class Playfield:
     def clear(self):
         self.minos = {}
 
-    def clear_lines(self):  # todo this don't work
+    def clear_lines(self):  # todo this don't work (dictionary changes size during iteration (makes sense))
         for i in self.minos:
             line = [x for x, y in self.minos if y == i[1]]
-            if line == list(range(*Playfield.FieldSize[0])):
+            if line == list(range(*(Playfield.FieldSize[0] + np.array((1, 1))))):
                 for j in self.minos:
-                    if j[1] > i[1]:
+                    if j[1] < i[1]:
                         self.set_mino([j[0], j[1] - 1], self.minos.pop(j))
-                    elif j[1] == i[i]:
+                    if j[1] == i[1]:
                         self.del_mino(j)
 
     def initialize(self):
