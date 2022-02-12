@@ -24,7 +24,7 @@ def Mino_array(shape, mino=Mino()):
 
 
 class Playfield:
-    DefaultSize = 10, 20
+    DefaultSize = 10, 22
     border_color = (0, 0, 0, 255)
     border_width = 3 / 200
     gridlines_color = (64, 64, 64, 80)
@@ -51,6 +51,12 @@ class Playfield:
         self.gravity = None
         self.time = None
         self.gravity_timer = None
+
+    def get_mino(self, pos):
+        return self.grid[tuple(pos + np.array([0, 2]))]
+
+    def set_mino(self, pos, mino):
+        self.grid[tuple(pos + np.array([0, 2]))] = mino
 
     # noinspection PyShadowingNames
     def render(self, size):
@@ -88,6 +94,7 @@ class Playfield:
             for y, j in enumerate(l):
                 surf.blit((j if not is_arr_in_list((x, y), self.current_piece.minos) else Mino(self.current_piece.color, True)).render(np.array(size) / np.array(self.grid_size) + (GT / 2, GT / 2)), (x, y) * (np.array(size) / np.array(self.grid_size)) + (BT, BT))
                 if config.debug.grid_index: ptext.draw(f'{x}, {y}', list(np.array([x, y]) * (np.array(size) / np.array(self.grid_size)) + (BT, BT)), surf=surf)  # debug
+        # todo visualise negative Y values, remove roof
         return pygame.transform.smoothscale(surf, full_size / 2)
 
     def is_legal(self, polymino: tetrominos.Polymino, excepted=None):
@@ -99,7 +106,7 @@ class Playfield:
         if excepted is None: excepted = []
         for m in polymino.minos:
             try:
-                if self.grid[tuple(m)] != Mino() or m[0] < 0 and m not in excepted:
+                if self.get_mino(m) != Mino() or m[0] < 0 and m not in excepted:
                     return False
             except IndexError:
                 return False
@@ -117,7 +124,7 @@ class Playfield:
 
     def erase_mino(self, pos, rep=None):
         try:
-            self.grid[tuple(pos)] = Mino() if rep is None else rep
+            self.set_mino(pos, Mino() if rep is None else rep)
         except IndexError:
             warnings.warn(f'tried to erase a mino outside of the field at pos {pos}')
 
@@ -151,7 +158,8 @@ class Playfield:
         self.SD_timer = 0
         self.DAS_charge = False
         self.has_switched = False
-        if pop: return ret
+        if pop:  # noinspection PyUnboundLocalVariable
+            return ret
 
     def move_lr(self, direction, held):
         if not held[0]:
@@ -223,7 +231,7 @@ class Playfield:
                 case ['rotate', angle]:  # je crois avoir réussi?
                     if not held[0]:
                         self.current_piece.rotate({'cw': 90, 'ccw': -90, '180': 180}[angle], self)
-                case ['hold']:  # todo ok either this one is the worst or it's ultra easy either way i need to add queue and hold to the renderer
+                case ['hold']:
                     if not held[0] and not self.has_switched:
                         if self.held_piece:
                             transfer = self.held_piece
@@ -233,8 +241,6 @@ class Playfield:
                         else:
                             self.held_piece = self.init_new_piece(pop=True)
                         self.has_switched = True
-
-
 
         # gravity step
         if self.gravity_timer >= self.gravity or self.piece_floored:

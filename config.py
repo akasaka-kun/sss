@@ -36,4 +36,4 @@ keyboard_controls = {
 
 # debug info
 class debug:
-    grid_index = False
+    grid_index = True
