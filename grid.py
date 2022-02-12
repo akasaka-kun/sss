@@ -134,7 +134,7 @@ class Playfield:
     def clear(self):
         self.minos = {}
 
-    def clear_lines(self):  # todo this don't work (dictionary changes size during iteration (makes sense))
+    def clear_lines(self):  # todo this don't work (dictionary changes size during iteration (makes sense)).
         for i in self.minos:
             line = [x for x, y in self.minos if y == i[1]]
             if line == list(range(*(Playfield.FieldSize[0] + np.array((1, 1))))):
