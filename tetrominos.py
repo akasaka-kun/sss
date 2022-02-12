@@ -91,10 +91,12 @@ class Rotation_system:
 
 class Polymino:
 
-    def __init__(self, pos: Sequence, rotation_table: Rotation_system.Rotation_table, kick_table: Rotation_system.Kick_table, color: str = '0'):
+    def __init__(self, pos: Sequence, rotation_table: Rotation_system.Rotation_table, kick_table: Rotation_system.Kick_table, color: str = '0', solid=True, placed=False):
         if len(pos) != 2: raise ValueError('pos needs to be a 2 item sequence')
         self.pos = np.array(pos)
         self.color = color
+        self.solid = solid
+        self.placed = placed
         self.angle = 0
         self.rotation_table = rotation_table
         self.kick_table = kick_table
@@ -106,6 +108,13 @@ class Polymino:
     @property
     def minos(self):
         return np.add(([self.pos] * len(self.rotation_table.rotations[self.angle % 360])), self.rotation_table.rotations[self.angle % 360])
+
+    @property
+    def Mino_type(self):
+        return Mino(self.color, self.solid, self.placed)
+
+    def place(self):
+        self.placed = True
 
     def moved(self, movement):
         ret = copy.deepcopy(self)

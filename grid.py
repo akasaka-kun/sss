@@ -1,6 +1,7 @@
 import os.path
 import random
 import re
+import sys
 import warnings
 
 import pygame
@@ -17,14 +18,9 @@ from tetrominos import Mino
 from srs import srs
 
 
-def Mino_array(shape, mino=Mino()):
-    a = np.empty(shape, dtype=Mino)
-    a.fill(copy(mino))
-    return a
-
-
 class Playfield:
-    DefaultSize = 10, 22
+    RenderedGridSize = 10, 20
+    FieldSize = [0, 10], [-2, 20]
     border_color = (0, 0, 0, 255)
     border_width = 3 / 200
     gridlines_color = (64, 64, 64, 80)
@@ -32,8 +28,8 @@ class Playfield:
     queue_texture = pygame.image.load(os.path.join(config.resources_path, 'textures/queue.png'))
 
     def __init__(self, controller, type_=srs):
-        self.grid_size = Playfield.DefaultSize
-        self.grid = Mino_array(self.grid_size)
+        self.grid_size = Playfield.RenderedGridSize
+        self.minos = {}
 
         self.type_ = type_
         self.queue = []
@@ -52,14 +48,8 @@ class Playfield:
         self.time = None
         self.gravity_timer = None
 
-    def get_mino(self, pos):
-        return self.grid[tuple(pos + np.array([0, 2]))]
-
-    def set_mino(self, pos, mino):
-        self.grid[tuple(pos + np.array([0, 2]))] = mino
-
     # noinspection PyShadowingNames
-    def render(self, size):
+    def render(self, size, pos):
         size = np.array(size) * 2
         border_thickness = Playfield.border_width * size[1]
         BT = border_thickness
@@ -90,14 +80,17 @@ class Playfield:
             pygame.draw.line(surf, Playfield.gridlines_color, (BT, (x + 1) * (size[0] / self.grid_size[0]) + BT), (size[0] + BT, (x + 1) * (size[0] / self.grid_size[0]) + BT), int(gridlines_thickness))
         for y in range(self.grid_size[0] - 1):
             pygame.draw.line(surf, Playfield.gridlines_color, ((y + 1) * (size[1] / self.grid_size[1]) + BT, BT), ((y + 1) * (size[1] / self.grid_size[1]) + BT, size[1] + BT), int(gridlines_thickness))
-        for x, l in enumerate(self.grid):
-            for y, j in enumerate(l):
-                surf.blit((j if not is_arr_in_list((x, y), self.current_piece.minos) else Mino(self.current_piece.color, True)).render(np.array(size) / np.array(self.grid_size) + (GT / 2, GT / 2)), (x, y) * (np.array(size) / np.array(self.grid_size)) + (BT, BT))
-                if config.debug.grid_index: ptext.draw(f'{x}, {y}', list(np.array([x, y]) * (np.array(size) / np.array(self.grid_size)) + (BT, BT)), surf=surf)  # debug
-        # todo visualise negative Y values, remove roof
+
+        for pos, mino in {**self.minos, **{k: v for k, v in zip([tuple(m) for m in self.current_piece.minos], [self.current_piece.Mino_type] * len(self.current_piece.minos))}}.items():  # todo y'a du bon... et bcp de mauvais
+            relative_pos_to_field = pos * (np.array(size) / np.array(self.grid_size)) + (BT, BT)
+            mino_size = np.array(size) / np.array(self.grid_size) + (GT / 2, GT / 2)  # todo WHY ARE THE MINO SO LARGE
+            print(mino_size)
+            pygame.display.get_surface().blit(mino.render(mino_size), pos + relative_pos_to_field)
+            if config.debug.grid_index: ptext.draw(f'{pos}', list(np.array(pos) * (np.array(size) / np.array(self.grid_size)) + (BT, BT)), surf=surf)  # debug
+
         return pygame.transform.smoothscale(surf, full_size / 2)
 
-    def is_legal(self, polymino: tetrominos.Polymino, excepted=None):
+    def is_legal(self, polymino: tetrominos.Polymino, excepted=None):  # todo this is broke
         """
         :param excepted:
         :param polymino: any polymino
@@ -106,11 +99,22 @@ class Playfield:
         if excepted is None: excepted = []
         for m in polymino.minos:
             try:
-                if self.get_mino(m) != Mino() or m[0] < 0 and m not in excepted:
+                if self.get_mino(m) != Mino() or \
+                        not all(i < j for i, j in zip(m, [self.FieldSize[0][0], self.FieldSize[1][0]])) and all(i < j for i, j in zip(m, [self.FieldSize[0][1], self.FieldSize[1][1]])) \
+                        and m not in excepted:
                     return False
             except IndexError:
                 return False
         return True
+
+    def get_mino(self, pos, default=None):
+        return self.minos.get(tuple(pos), Mino() if default is None else default)
+
+    def del_mino(self, pos, rep=None):
+        self.minos[tuple(pos)] = Mino() if rep is None else rep
+
+    def set_mino(self, pos, mino):
+        self.minos[tuple(pos)] = mino
 
     def place_polymino(self, polymino: tetrominos.Polymino, solid=True, definitive=False, ret=False):
         """
@@ -120,21 +124,26 @@ class Playfield:
         :param ret: what should this have returned again?
         """
         for m in polymino.minos:
-            self.erase_mino(m, rep=Mino(polymino.color, solid, is_placed=definitive))
+            self.del_mino(m, rep=Mino(polymino.color, solid, is_placed=definitive))
 
-    def erase_mino(self, pos, rep=None):
-        try:
-            self.set_mino(pos, Mino() if rep is None else rep)
-        except IndexError:
-            warnings.warn(f'tried to erase a mino outside of the field at pos {pos}')
+    # def erase_mino(self, pos, rep=None):
+    #     try:
+    #         self.grid[tuple(pos)] = Mino() if rep is None else rep
+    #     except IndexError:
+    #         warnings.warn(f'tried to erase a mino outside of the field at pos {pos}')
 
     def clear(self):
-        self.grid = Mino_array(self.grid_size)
+        self.minos = {}
 
     def clear_lines(self):
-        for y, l in enumerate(self.grid.transpose()):
-            if all(m.placed for m in l):
-                self.grid = np.array([Mino_array(Playfield.DefaultSize[0]), *self.grid.transpose()[:y], *self.grid.transpose()[y + 1:]]).transpose()
+        for i in self.minos:
+            line = [x for x, y in self.minos if y == i[1]]
+            if line == list(range(*Playfield.FieldSize[0])):
+                for j in self.minos:
+                    if j[1] > i[1]:
+                        self.set_mino([j[0], j[1] - 1], self.minos.pop(j))
+                    elif j[1] == i[i]:
+                        self.del_mino(j)
 
     def initialize(self):
         self.init_queue()
@@ -158,7 +167,7 @@ class Playfield:
         self.SD_timer = 0
         self.DAS_charge = False
         self.has_switched = False
-        if pop:  # noinspection PyUnboundLocalVariable
+        if pop: # noinspection PyUnboundLocalVariable
             return ret
 
     def move_lr(self, direction, held):
@@ -231,7 +240,7 @@ class Playfield:
                 case ['rotate', angle]:  # je crois avoir réussi?
                     if not held[0]:
                         self.current_piece.rotate({'cw': 90, 'ccw': -90, '180': 180}[angle], self)
-                case ['hold']:
+                case ['hold']:  # todo ok either this one is the worst or it's ultra easy either way i need to add queue and hold to the renderer
                     if not held[0] and not self.has_switched:
                         if self.held_piece:
                             transfer = self.held_piece
@@ -261,11 +270,11 @@ class Playfield:
             self.init_new_piece(pop=True)
 
     @property
-    def current_piece(self):
+    def current_piece(self) -> tetrominos.Polymino:
         return self.queue[0]
 
     def __repr__(self):
-        return repr(self.grid.transpose())
+        return repr(self.minos)
 
 
 if __name__ == '__main__':
