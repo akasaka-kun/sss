@@ -87,7 +87,7 @@ class T(Tetromino):
     def __init__(self, pos: Sequence, rotation_system: Rotation_system = srs):
         super(T, self).__init__(pos, rotation_system.rotations['T'], rotation_system.kicks['T'], color='P')
 
-    spawn_pos = 4, 0
+    spawn_pos = 3, 0
 
 
 class S(Tetromino):
@@ -95,7 +95,7 @@ class S(Tetromino):
     def __init__(self, pos: Sequence, rotation_system: Rotation_system = srs):
         super(S, self).__init__(pos, rotation_system.rotations['S'], rotation_system.kicks['S'], color='G')
 
-    spawn_pos = 4, 0
+    spawn_pos = 3, 0
 
 
 class Z(Tetromino):
@@ -103,7 +103,7 @@ class Z(Tetromino):
     def __init__(self, pos: Sequence, rotation_system: Rotation_system = srs):
         super(Z, self).__init__(pos, rotation_system.rotations['Z'], rotation_system.kicks['Z'], color='R')
 
-    spawn_pos = 4, 0
+    spawn_pos = 3, 0
 
 
 class J(Tetromino):
@@ -111,7 +111,7 @@ class J(Tetromino):
     def __init__(self, pos: Sequence, rotation_system: Rotation_system = srs):
         super(J, self).__init__(pos, rotation_system.rotations['J'], rotation_system.kicks['J'], color='B')
 
-    spawn_pos = 4, 0
+    spawn_pos = 3, 0
 
 
 class L(Tetromino):
@@ -119,7 +119,7 @@ class L(Tetromino):
     def __init__(self, pos: Sequence, rotation_system: Rotation_system = srs):
         super(L, self).__init__(pos, rotation_system.rotations['L'], rotation_system.kicks['L'], color='O')
 
-    spawn_pos = 4, 0
+    spawn_pos = 3, 0
 
 
 class I(Tetromino):

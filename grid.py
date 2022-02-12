@@ -1,3 +1,4 @@
+import os.path
 import random
 import re
 import warnings
@@ -28,6 +29,7 @@ class Playfield:
     border_width = 3 / 200
     gridlines_color = (64, 64, 64, 80)
     gridlines_thickness = 1 / 500
+    queue_texture = pygame.image.load(os.path.join(config.resources_path, 'textures/queue.png'))
 
     def __init__(self, controller, type_=srs):
         self.grid_size = Playfield.DefaultSize
@@ -35,9 +37,12 @@ class Playfield:
 
         self.type_ = type_
         self.queue = []
+        self.next_queue = []
         self.controller: Controllers.Controller = controller
 
         # initialize fields
+        self.has_switched = None
+        self.held_piece = None
         self.SD_timer = None
         self.DAS_charge = None
         self.ARR_timer = None
@@ -54,12 +59,26 @@ class Playfield:
         BT = border_thickness
         gridlines_thickness = Playfield.gridlines_thickness * size[1]
         GT = gridlines_thickness
-        full_size = np.array(size) + np.array((border_thickness * 2, border_thickness * 2))
+        queue_size = size[0] * 0.3
+        field_size = np.array(size) + np.array((border_thickness * 2, border_thickness * 2))
+        full_size = field_size + np.array([queue_size, 0])
 
         surf = pygame.Surface(full_size).convert_alpha()
-        surf.fill((32, 32, 32, 255))
+        surf.fill((*config.screen_bg, 255))
 
-        pygame.draw.rect(surf, Playfield.border_color, (0, 0, *full_size), int(border_thickness))
+        # draw playfield
+        pygame.draw.rect(surf, Playfield.border_color, (0, 0, *field_size), int(border_thickness))
+        # draw queue
+        surf.blit(pygame.transform.smoothscale(Playfield.queue_texture, (queue_size, queue_size * 6)), (full_size[0] - queue_size, 0))
+        for y, piece in enumerate([self.held_piece, *self.queue[1:], *self.next_queue][:6]):
+            if piece is None: continue
+            piece: tetrominos.Polymino
+            piece_size = max(m[0] for m in piece.absolute_minos), max(m[1] for m in piece.absolute_minos)
+            render_grid = piece_size + np.array([3, 3])
+            render_grid = np.array([max(render_grid)] * 2)
+            for i in piece.absolute_minos:
+                surf.blit(Mino(piece.color, True).render([queue_size] * 2 / render_grid),
+                          (field_size[0] + ((queue_size / render_grid[0]) * (i[0] + 1)), (queue_size * y) + ((queue_size / render_grid[1]) * (i[1] + 1))))  # todo fix this
 
         for x in range(self.grid_size[1] - 1):
             pygame.draw.line(surf, Playfield.gridlines_color, (BT, (x + 1) * (size[0] / self.grid_size[0]) + BT), (size[0] + BT, (x + 1) * (size[0] / self.grid_size[0]) + BT), int(gridlines_thickness))
@@ -69,7 +88,7 @@ class Playfield:
             for y, j in enumerate(l):
                 surf.blit((j if not is_arr_in_list((x, y), self.current_piece.minos) else Mino(self.current_piece.color, True)).render(np.array(size) / np.array(self.grid_size) + (GT / 2, GT / 2)), (x, y) * (np.array(size) / np.array(self.grid_size)) + (BT, BT))
                 if config.debug.grid_index: ptext.draw(f'{x}, {y}', list(np.array([x, y]) * (np.array(size) / np.array(self.grid_size)) + (BT, BT)), surf=surf)  # debug
-        return pygame.transform.smoothscale(surf, size / 2)
+        return pygame.transform.smoothscale(surf, full_size / 2)
 
     def is_legal(self, polymino: tetrominos.Polymino, excepted=None):
         """
@@ -113,24 +132,26 @@ class Playfield:
     def initialize(self):
         self.init_queue()
         self.init_new_piece()
-
-        # to see if further need for initialization... SUCH AS ASSIGNING DIFFERENT CONTROLLERS
+        # todo see if further need for initialization... SUCH AS ASSIGNING DIFFERENT CONTROLLERS
 
     def init_queue(self, empty=False, shuffle=True):
-        self.queue = [piece(piece.spawn_pos) for piece in self.type_.pieces.copy()]
+        self.queue = self.next_queue if self.next_queue else [piece(piece.spawn_pos) for piece in self.type_.pieces.copy()]
+        self.next_queue = [piece(piece.spawn_pos) for piece in self.type_.pieces.copy()]
         if shuffle: random.shuffle(self.queue)
 
     def init_new_piece(self, pop=False):
-        if pop: self.queue.pop(0)
+        if pop: ret = self.queue.pop(0)
         if len(self.queue) == 0:
             self.init_queue()
         self.time = 0
         self.gravity_timer = self.time
-        self.gravity = config.gravity  # todo put in config
+        self.gravity = config.gravity
         self.APT = self.gravity  # todo if init new piece fails induce game over
         self.ARR_timer = 0
         self.SD_timer = 0
         self.DAS_charge = False
+        self.has_switched = False
+        if pop: return ret
 
     def move_lr(self, direction, held):
         if not held[0]:
@@ -176,11 +197,15 @@ class Playfield:
         # DAS charge
         if config.cancel_DAS_charge:
             for v in {k: v for k, v in self.controller.actions.items() if k in ('left', 'right')}.values():
-                if v[0] and v[1] > config.DAS: self.DAS_charge = True
-                else: self.DAS_charge = False
+                if v[0] and v[1] > config.DAS:
+                    self.DAS_charge = True
+                else:
+                    self.DAS_charge = False
         else:
-            if any([v[0] and v[1] > config.DAS for k, v in self.controller.actions.items() if k in ('left', 'right')]): self.DAS_charge = True
-            else: self.DAS_charge = False
+            if any([v[0] and v[1] > config.DAS for k, v in self.controller.actions.items() if k in ('left', 'right')]):
+                self.DAS_charge = True
+            else:
+                self.DAS_charge = False
         # actual control
         for action, held in self.controller.actions.items():
             match action.split('_'):
@@ -199,7 +224,17 @@ class Playfield:
                     if not held[0]:
                         self.current_piece.rotate({'cw': 90, 'ccw': -90, '180': 180}[angle], self)
                 case ['hold']:  # todo ok either this one is the worst or it's ultra easy either way i need to add queue and hold to the renderer
-                    pass
+                    if not held[0] and not self.has_switched:
+                        if self.held_piece:
+                            transfer = self.held_piece
+                            self.queue.insert(0, transfer)
+                            self.init_new_piece()
+                            self.held_piece = self.queue.pop(1)
+                        else:
+                            self.held_piece = self.init_new_piece(pop=True)
+                        self.has_switched = True
+
+
 
         # gravity step
         if self.gravity_timer >= self.gravity or self.piece_floored:

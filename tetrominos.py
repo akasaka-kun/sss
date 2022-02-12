@@ -100,6 +100,10 @@ class Polymino:
         self.kick_table = kick_table
 
     @property
+    def absolute_minos(self):
+        return self.rotation_table.rotations[self.angle % 360]
+
+    @property
     def minos(self):
         return np.add(([self.pos] * len(self.rotation_table.rotations[self.angle % 360])), self.rotation_table.rotations[self.angle % 360])
 
