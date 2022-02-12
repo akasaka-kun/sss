@@ -103,11 +103,6 @@ class Polymino:
     def minos(self):
         return np.add(([self.pos] * len(self.rotation_table.rotations[self.angle % 360])), self.rotation_table.rotations[self.angle % 360])
 
-    def kicked(self, kick):
-        ret = copy.deepcopy(self)
-        ret.pos += kick[0], -kick[1]  # todo this is a terrible workaround to the fact that the kick table is made for y up coordinates
-        return ret
-
     def moved(self, movement):
         ret = copy.deepcopy(self)
         ret.pos += movement
@@ -119,6 +114,11 @@ class Polymino:
         else:
             return None
         if ret: return self
+
+    def kicked(self, kick):
+        ret = copy.deepcopy(self)
+        ret.pos += kick[0], -kick[1]  # todo this is a terrible workaround to the fact that the kick table is made for y up coordinates
+        return ret
 
     def rotated(self, angle):
         ret = copy.deepcopy(self)
