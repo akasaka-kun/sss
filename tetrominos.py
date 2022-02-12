@@ -103,27 +103,9 @@ class Polymino:
     def minos(self):
         return np.add(([self.pos] * len(self.rotation_table.rotations[self.angle % 360])), self.rotation_table.rotations[self.angle % 360])
 
-    def is_clipping(self, field, kick=None):
-        if kick is None: kick = [0, 0]
-        oob_clip = True
-        try:
-            if any(field.grid[tuple(self.pos + np.array(m) + kick)] != Mino() for m in self.minos):
-                oob_clip = False
-                raise IndexError
-            else:
-                return False
-        except IndexError:
-            return True, oob_clip
-
     def kicked(self, kick):
         ret = copy.deepcopy(self)
         ret.pos += kick[0], -kick[1]  # todo this is a terrible workaround to the fact that the kick table is made for y up coordinates
-        return ret
-
-    def rotated(self, angle):
-        ret = copy.deepcopy(self)
-        if angle not in [90, -90, 180]: raise ValueError('can only rotate a polymino by 90, -90 or 180 degrees')
-        ret.angle = (self.angle + angle) % 360
         return ret
 
     def moved(self, movement):
@@ -138,6 +120,12 @@ class Polymino:
             return None
         if ret: return self
 
+    def rotated(self, angle):
+        ret = copy.deepcopy(self)
+        if angle not in [90, -90, 180]: raise ValueError('can only rotate a polymino by 90, -90 or 180 degrees')
+        ret.angle = (self.angle + angle) % 360
+        return ret
+
     def rotate(self, angle, field, ret=True):
         try:
             for k in self.kick_table.kicks[(self.angle, (self.angle + angle) % 360)]:
@@ -147,7 +135,8 @@ class Polymino:
                     utilities.become(self, self.rotated(angle).kicked(k))
                     break
         except KeyError:
-            if field.is_legal(self.rotated(angle)): utilities.become(self, self.rotated(angle))
+            if field.is_legal(self.rotated(angle)):
+                utilities.become(self, self.rotated(angle))
         if ret: return self
 
 

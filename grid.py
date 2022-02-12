@@ -77,14 +77,13 @@ class Playfield:
         :param polymino: any polymino
         :return: whether that polymino can be placed in a position without overriding any other mino
         """
+        if excepted is None: excepted = []
         for m in polymino.minos:
             try:
-                if self.grid[tuple(m)] != Mino() or any(n < 0 for n in m) and m not in excepted:
+                if self.grid[tuple(m)] != Mino() or m[0] < 0 and m not in excepted:
                     return False
             except IndexError:
                 return False
-            except TypeError:
-                print(polymino.minos, polymino.pos, polymino.angle)
         return True
 
     def place_polymino(self, polymino: tetrominos.Polymino, solid=True, definitive=False, ret=False):
