@@ -40,7 +40,7 @@ while not done:
     screen.fill(screen_bg)
     field_size = screen_size * 0.8
     field_size[0] = 0.5 * field_size[1]
-    screen.blit(field.render(field_size, screen_size * 0.1), screen_size * 0.1)
+    field.render(field_size, screen_size * 0.1)
 
     pygame.display.flip()
 

@@ -81,13 +81,13 @@ class Playfield:
         for y in range(self.grid_size[0] - 1):
             pygame.draw.line(surf, Playfield.gridlines_color, ((y + 1) * (PFsize[1] / self.grid_size[1]) + BT, BT), ((y + 1) * (PFsize[1] / self.grid_size[1]) + BT, PFsize[1] + BT), int(gridlines_thickness))
 
-        for pos, mino in {**self.minos, **{k: v for k, v in zip([tuple(m) for m in self.current_piece.minos], [self.current_piece.Mino_type] * len(self.current_piece.minos))}}.items():  # todo y'a du bon... et bcp de mauvais
-            relative_pos_to_field = pos * (np.array(PFsize) / np.array(self.grid_size)) + (BT, BT)
-            mino_size = np.array(field_size) / np.array(self.grid_size) + (GT / 2, GT / 2)  # todo WHY ARE THE MINO OFFSET BY 2
-            pygame.display.get_surface().blit(mino.render(mino_size // 2), (field_pos + relative_pos_to_field) // 2)
-            if config.debug.grid_index: ptext.draw(f'{pos}', list(np.array(pos) * (np.array(PFsize) / np.array(self.grid_size)) + (BT, BT)), surf=surf)  # debug
+        pygame.display.get_surface().blit(pygame.transform.smoothscale(surf, full_size / 2), field_pos)
 
-        return pygame.transform.smoothscale(surf, full_size / 2)
+        for pos, mino in {**self.minos, **{k: v for k, v in zip([tuple(m) for m in self.current_piece.minos], [self.current_piece.Mino_type] * len(self.current_piece.minos))}}.items():  # todo y'a du bon... et bcp de mauvais
+            relative_pos_to_field = (pos + np.array((1, 0))) * (np.array(PFsize) / np.array(self.grid_size)) + (0, BT)  # todo find the true reason i need to add this hardcoded offset + (0, BT)
+            mino_size = np.array(PFsize) / np.array(self.grid_size) + (GT / 2, GT / 2)
+            pygame.display.get_surface().blit(mino.render(mino_size // 2), (field_pos + (BT, BT) + relative_pos_to_field) // 2)
+            if config.debug.grid_index: ptext.draw(f'{pos}', list(np.array(pos) * (np.array(PFsize) / np.array(self.grid_size)) + (BT, BT)), surf=surf)  # debug
 
     def is_legal(self, polymino: tetrominos.Polymino, excepted=None):  # todo this is less broke
         """
@@ -98,7 +98,6 @@ class Playfield:
         if excepted is None: excepted = []
         for m in polymino.minos:
             try:
-                print(self.FieldSize, m)
                 if self.get_mino(m) != Mino() or \
                         not (self.FieldSize[0][0] < m[0] <= self.FieldSize[0][1] and self.FieldSize[1][0] < m[1] <= self.FieldSize[1][1]) \
                         and m not in excepted:
@@ -167,10 +166,10 @@ class Playfield:
         self.SD_timer = 0
         self.DAS_charge = False
         self.has_switched = False
-        if pop: # noinspection PyUnboundLocalVariable
+        if pop:  # noinspection PyUnboundLocalVariable
             return ret
 
-    def move_lr(self, direction, held):
+    def move_lr(self, direction, held):  # todo there is some delay the first time you move  piece for some reason
         if not held[0]:
             self.current_piece.move(direction, self)
         if self.DAS_charge:
