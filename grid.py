@@ -48,15 +48,15 @@ class Playfield:
         self.time = None
         self.gravity_timer = None
 
-    # noinspection PyShadowingNames
-    def render(self, size, pos):
-        size = np.array(size) * 2
-        border_thickness = Playfield.border_width * size[1]
+    # noinspection PyShadowingNames,SpellCheckingInspection
+    def render(self, size_, field_pos):
+        PFsize = np.array(size_) * 2
+        border_thickness = Playfield.border_width * PFsize[1]
         BT = border_thickness
-        gridlines_thickness = Playfield.gridlines_thickness * size[1]
+        gridlines_thickness = Playfield.gridlines_thickness * PFsize[1]
         GT = gridlines_thickness
-        queue_size = size[0] * 0.3
-        field_size = np.array(size) + np.array((border_thickness * 2, border_thickness * 2))
+        queue_size = PFsize[0] * 0.3
+        field_size = np.array(PFsize) + np.array((border_thickness * 2, border_thickness * 2))
         full_size = field_size + np.array([queue_size, 0])
 
         surf = pygame.Surface(full_size).convert_alpha()
@@ -77,16 +77,16 @@ class Playfield:
                           (field_size[0] + ((queue_size / render_grid[0]) * (i[0] + 1)), (queue_size * y) + ((queue_size / render_grid[1]) * (i[1] + 1))))  # todo fix this
 
         for x in range(self.grid_size[1] - 1):
-            pygame.draw.line(surf, Playfield.gridlines_color, (BT, (x + 1) * (size[0] / self.grid_size[0]) + BT), (size[0] + BT, (x + 1) * (size[0] / self.grid_size[0]) + BT), int(gridlines_thickness))
+            pygame.draw.line(surf, Playfield.gridlines_color, (BT, (x + 1) * (PFsize[0] / self.grid_size[0]) + BT), (PFsize[0] + BT, (x + 1) * (PFsize[0] / self.grid_size[0]) + BT), int(gridlines_thickness))
         for y in range(self.grid_size[0] - 1):
-            pygame.draw.line(surf, Playfield.gridlines_color, ((y + 1) * (size[1] / self.grid_size[1]) + BT, BT), ((y + 1) * (size[1] / self.grid_size[1]) + BT, size[1] + BT), int(gridlines_thickness))
+            pygame.draw.line(surf, Playfield.gridlines_color, ((y + 1) * (PFsize[1] / self.grid_size[1]) + BT, BT), ((y + 1) * (PFsize[1] / self.grid_size[1]) + BT, PFsize[1] + BT), int(gridlines_thickness))
 
         for pos, mino in {**self.minos, **{k: v for k, v in zip([tuple(m) for m in self.current_piece.minos], [self.current_piece.Mino_type] * len(self.current_piece.minos))}}.items():  # todo y'a du bon... et bcp de mauvais
-            relative_pos_to_field = pos * (np.array(size) / np.array(self.grid_size)) + (BT, BT)
-            mino_size = np.array(size) / np.array(self.grid_size) + (GT / 2, GT / 2)  # todo WHY ARE THE MINO SO LARGE
-            print(mino_size)
-            pygame.display.get_surface().blit(mino.render(mino_size), pos + relative_pos_to_field)
-            if config.debug.grid_index: ptext.draw(f'{pos}', list(np.array(pos) * (np.array(size) / np.array(self.grid_size)) + (BT, BT)), surf=surf)  # debug
+            relative_pos_to_field = pos * (np.array(PFsize) / np.array(self.grid_size)) + (BT, BT)
+            mino_size = np.array(field_size) / np.array(self.grid_size) + (GT / 2, GT / 2)  # todo WHY ARE THE MINO OFFSET BY 2
+            print((field_pos + relative_pos_to_field) // 2, pos)
+            pygame.display.get_surface().blit(mino.render(mino_size // 2), (field_pos + relative_pos_to_field) // 2)
+            if config.debug.grid_index: ptext.draw(f'{pos}', list(np.array(pos) * (np.array(PFsize) / np.array(self.grid_size)) + (BT, BT)), surf=surf)  # debug
 
         return pygame.transform.smoothscale(surf, full_size / 2)
 
