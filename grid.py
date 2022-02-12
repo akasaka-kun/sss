@@ -84,13 +84,12 @@ class Playfield:
         for pos, mino in {**self.minos, **{k: v for k, v in zip([tuple(m) for m in self.current_piece.minos], [self.current_piece.Mino_type] * len(self.current_piece.minos))}}.items():  # todo y'a du bon... et bcp de mauvais
             relative_pos_to_field = pos * (np.array(PFsize) / np.array(self.grid_size)) + (BT, BT)
             mino_size = np.array(field_size) / np.array(self.grid_size) + (GT / 2, GT / 2)  # todo WHY ARE THE MINO OFFSET BY 2
-            print((field_pos + relative_pos_to_field) // 2, pos)
             pygame.display.get_surface().blit(mino.render(mino_size // 2), (field_pos + relative_pos_to_field) // 2)
             if config.debug.grid_index: ptext.draw(f'{pos}', list(np.array(pos) * (np.array(PFsize) / np.array(self.grid_size)) + (BT, BT)), surf=surf)  # debug
 
         return pygame.transform.smoothscale(surf, full_size / 2)
 
-    def is_legal(self, polymino: tetrominos.Polymino, excepted=None):  # todo this is broke
+    def is_legal(self, polymino: tetrominos.Polymino, excepted=None):  # todo this is less broke
         """
         :param excepted:
         :param polymino: any polymino
@@ -99,8 +98,9 @@ class Playfield:
         if excepted is None: excepted = []
         for m in polymino.minos:
             try:
+                print(self.FieldSize, m)
                 if self.get_mino(m) != Mino() or \
-                        not all(i < j for i, j in zip(m, [self.FieldSize[0][0], self.FieldSize[1][0]])) and all(i < j for i, j in zip(m, [self.FieldSize[0][1], self.FieldSize[1][1]])) \
+                        not (self.FieldSize[0][0] < m[0] <= self.FieldSize[0][1] and self.FieldSize[1][0] < m[1] <= self.FieldSize[1][1]) \
                         and m not in excepted:
                     return False
             except IndexError:
@@ -135,7 +135,7 @@ class Playfield:
     def clear(self):
         self.minos = {}
 
-    def clear_lines(self):
+    def clear_lines(self):  # todo this don't work
         for i in self.minos:
             line = [x for x, y in self.minos if y == i[1]]
             if line == list(range(*Playfield.FieldSize[0])):
