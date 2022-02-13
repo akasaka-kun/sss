@@ -130,30 +130,23 @@ class Playfield:
         :param solid: whether to have it be solid or not. useful for preview shadow
         :param ret: what should this have returned again?
         """
-        cleared_lines = 0
+
         for m in polymino.minos:
             self.del_mino(m, rep=Mino(polymino.color, solid, is_placed=definitive))
+        cleared_lines = 0
+        for m in polymino.minos:
             cleared_lines += 1 if self.clear_line(m[1]) is True else 0
         if cleared_lines: print('cleared', cleared_lines, 'lines')
 
-    # def erase_mino(self, pos, rep=None):
-    #     try:
-    #         self.grid[tuple(pos)] = Mino() if rep is None else rep
-    #     except IndexError:
-    #         warnings.warn(f'tried to erase a mino outside of the field at pos {pos}')
-
     def clear_line(self, y, no_check=False):
-        new_minos = {k: v.copy() for k, v in self.minos.items()}
-        if sorted([i[0] for i, m in self.minos.items() if i[1] == y and m.placed]) == list(range(*(Playfield.FieldSize[0] + np.array((1, 1))))):
-            print('clearing line', y)
+        new_minos = {}
+        if sorted([i[0] for i, m in self.minos.items() if i[1] == y and m.solid]) == list(range(*(Playfield.FieldSize[0] + np.array((1, 1))))):
             for i, m in self.minos.items():
                 if m.placed and m.solid:
-                    if i[1] == y:
-                        self.del_mino(i, minos=new_minos)
-                    elif i[1] < y:  # todo this don't work, for some reason it seems to delete random minos???
-                        new_minos.pop(i)
-                        self.set_mino(i + np.array([0, 1]), m, minos=new_minos)  # THE ISSUE IS HERE
-            print(new_minos)
+                    if i[1] > y:
+                        self.set_mino(i, m, minos=new_minos)
+                    elif i[1] < y:
+                        self.set_mino(i + np.array([0, 1]), m, minos=new_minos)
             self.minos.clear()
             self.minos.update(new_minos)
             return True
