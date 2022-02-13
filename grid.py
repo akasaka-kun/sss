@@ -77,7 +77,7 @@ class Playfield:
             render_grid = np.array([max(render_grid)] * 2)
             for i in piece.absolute_minos:
                 surf.blit(Mino(piece.color, True).render([queue_size] * 2 / render_grid),
-                          (field_size[0] + ((queue_size / render_grid[0]) * (i[0] + 1)), (queue_size * y) + ((queue_size / render_grid[1]) * (i[1] + 1))))  # todo fix this
+                          (field_size[0] + ((queue_size / render_grid[0]) * (i[0] + 1)), (queue_size * y) + ((queue_size / render_grid[1]) * (i[1] + 1))))
 
         for x in range(self.grid_size[1] - 1):
             pygame.draw.line(surf, Playfield.gridlines_color, (BT, (x + 1) * (PFsize[0] / self.grid_size[0]) + BT), (PFsize[0] + BT, (x + 1) * (PFsize[0] / self.grid_size[0]) + BT), int(gridlines_thickness))
@@ -90,7 +90,7 @@ class Playfield:
 
         pygame.display.get_surface().blit(pygame.transform.smoothscale(surf, full_size / 2), field_pos)
 
-        for pos, mino in {**self.minos, **{k: v for k, v in zip([tuple(m) for m in self.current_piece.minos], [self.current_piece.Mino_type] * len(self.current_piece.minos))}}.items():  # todo y'a du bon... et bcp de mauvais
+        for pos, mino in {**self.minos, **{k: v for k, v in zip([tuple(m) for m in self.current_piece.minos], [self.current_piece.Mino_type] * len(self.current_piece.minos))}}.items():
             relative_pos_to_field = (pos + np.array((2, 1))) * (np.array(PFsize) / np.array(self.grid_size)) + (0, BT)  # todo find the true reason i need to add this hardcoded offset + (0, BT)
             mino_size = np.array(PFsize) / np.array(self.grid_size) + (GT / 2, GT / 2)
             pygame.display.get_surface().blit(mino.render(mino_size // 2), (field_pos + (BT, BT) + relative_pos_to_field) // 2)
@@ -177,7 +177,7 @@ class Playfield:
         if pop:  # noinspection PyUnboundLocalVariable
             return ret
 
-    def move_lr(self, direction, held):  # todo there is some delay the first time you move  piece for some reason
+    def move_lr(self, direction, held):
         if not held[0]:
             self.current_piece.move(direction, self)
         if self.DAS_charge:
@@ -244,16 +244,19 @@ class Playfield:
                         case 'hard':
                             if not held[0]:
                                 self.drop_piece('hard')
-                case ['rotate', angle]:  # je crois avoir réussi?
+                case ['rotate', angle]:
                     if not held[0]:
                         self.current_piece.rotate({'cw': 90, 'ccw': -90, '180': 180}[angle], self)
-                case ['hold']:  # todo OH SHIT WE STORING POS AND ROTATION IN THE HOLD QUEUE WE NEED TO RESET THAT
+                case ['hold']:
                     if not held[0] and not self.has_switched:
                         if self.held_piece:
-                            transfer = self.held_piece
+                            transfer: tetrominos.Polymino = self.held_piece
+                            transfer = transfer.__class__(transfer.__class__.spawn_pos)
+                            # transfer = self.type_.pieces.copy()
                             self.queue.insert(0, transfer)
                             self.init_new_piece()
                             self.held_piece = self.queue.pop(1)
+                            self.held_piece = self.held_piece.__class__(transfer.__class__.spawn_pos)
                         else:
                             self.held_piece = self.init_new_piece(pop=True)
                         self.has_switched = True

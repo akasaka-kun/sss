@@ -109,6 +109,8 @@ class Rotation_system:
 
 class Polymino:
 
+    spawn_pos = None
+
     def __init__(self, pos: Sequence, rotation_table: Rotation_system.Rotation_table, kick_table: Rotation_system.Kick_table, color: str = '0', solid=True, placed=False):
         if len(pos) != 2: raise ValueError('pos needs to be a 2 item sequence')
         self.pos = np.array(pos)
