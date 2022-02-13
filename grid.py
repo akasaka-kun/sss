@@ -6,7 +6,7 @@ import warnings
 
 import pygame
 import numpy as np
-from copy import copy
+from copy import copy, deepcopy
 
 import Controllers
 import config
@@ -89,7 +89,11 @@ class Playfield:
         for pos, mino in {**self.minos, **{k: v for k, v in zip([tuple(m) for m in self.current_piece.minos], [self.current_piece.Mino_type] * len(self.current_piece.minos))}}.items():  # todo y'a du bon... et bcp de mauvais
             relative_pos_to_field = (pos + np.array((1, 0))) * (np.array(PFsize) / np.array(self.grid_size)) + (0, BT)  # todo find the true reason i need to add this hardcoded offset + (0, BT)
             mino_size = np.array(PFsize) / np.array(self.grid_size) + (GT / 2, GT / 2)
-            pygame.display.get_surface().blit(mino.render(mino_size // 2), (field_pos + (BT, BT) + relative_pos_to_field) // 2)
+            try:
+                pygame.display.get_surface().blit(mino.render(mino_size // 2), (field_pos + (BT, BT) + relative_pos_to_field) // 2)
+            except AttributeError as a:
+                print(mino.__dict__)
+                raise a
             if config.debug.grid_index: ptext.draw(f'{pos}', list(np.array(pos) * (np.array(PFsize) / np.array(self.grid_size)) + (BT, BT)), surf=surf)  # debug
 
     def is_legal(self, polymino: tetrominos.Polymino, excepted=None):
@@ -113,7 +117,8 @@ class Playfield:
         return (self.minos if minos is None else minos).get(tuple(pos), Mino() if default is None else default)
 
     def del_mino(self, pos, rep=None, minos=None):
-        (self.minos if minos is None else minos)[tuple(pos)] = Mino() if rep is None else rep
+        if rep is None : (self.minos if minos is None else minos).pop(tuple(pos))
+        else: (self.minos if minos is None else minos)[tuple(pos)] = rep
 
     def set_mino(self, pos, mino, minos=None):
         (self.minos if minos is None else minos)[tuple(pos)] = mino
@@ -138,18 +143,19 @@ class Playfield:
     #         warnings.warn(f'tried to erase a mino outside of the field at pos {pos}')
 
     def clear_line(self, y, no_check=False):
-        new_minos = self.minos.copy()
-        if sorted([i[0] for i in self.minos if i[1] == y]) == list(range(*(Playfield.FieldSize[0] + np.array((1, 1))))):
+        new_minos = {k: v.copy() for k, v in self.minos.items()}
+        if sorted([i[0] for i, m in self.minos.items() if i[1] == y and m.placed]) == list(range(*(Playfield.FieldSize[0] + np.array((1, 1))))):
             print('clearing line', y)
             for i, m in self.minos.items():
-                if not m.placed: continue
-                if i[1] == y:
-                    self.del_mino(i, minos=new_minos)
-                elif i[1] < y:  # todo this don't work, for some reason it seems to delete random minos???
-                    new_minos.pop(i)
-                    self.set_mino(i + np.array([0, 1]), m, minos=new_minos)
+                if m.placed and m.solid:
+                    if i[1] == y:
+                        self.del_mino(i, minos=new_minos)
+                    elif i[1] < y:  # todo this don't work, for some reason it seems to delete random minos???
+                        new_minos.pop(i)
+                        self.set_mino(i + np.array([0, 1]), m, minos=new_minos)  # THE ISSUE IS HERE
+            print(new_minos)
             self.minos.clear()
-            self.minos = new_minos
+            self.minos.update(new_minos)
             return True
 
     def initialize(self):

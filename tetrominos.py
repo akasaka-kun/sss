@@ -20,6 +20,15 @@ class Color_set(dict):
     def texture_dict__repr__(self):
         return f'[<{"> <".join(f"{i[0]}:{self[i[0]]}, {i[1]}, {int(i[2])}" for i in self.texture_dict)}>]'
 
+    def copy(self):
+        copy_obj = Color_set({})
+        for name, attr in self.__dict__.items():
+            if hasattr(attr, 'copy') and callable(getattr(attr, 'copy')):
+                copy_obj.__dict__[name] = attr.copy()
+            else:
+                copy_obj.__dict__[name] = copy.deepcopy(attr)
+        return copy_obj
+
     def get_texture(self, color: str, size: Sequence, solid: bool):
         size = tuple(size)
         try:
@@ -68,6 +77,15 @@ class Mino:
             return True
         else:
             return False
+
+    def copy(self):
+        copy_obj = Mino()
+        for name, attr in self.__dict__.items():
+            if hasattr(attr, 'copy') and callable(getattr(attr, 'copy')):
+                copy_obj.__dict__[name] = attr.copy()
+            else:
+                copy_obj.__dict__[name] = copy.deepcopy(attr)
+        return copy_obj
 
 
 class Rotation_system:
