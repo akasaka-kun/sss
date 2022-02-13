@@ -83,18 +83,17 @@ class Playfield:
             pygame.draw.line(surf, Playfield.gridlines_color, (BT, (x + 1) * (PFsize[0] / self.grid_size[0]) + BT), (PFsize[0] + BT, (x + 1) * (PFsize[0] / self.grid_size[0]) + BT), int(gridlines_thickness))
         for y in range(self.grid_size[0] - 1):
             pygame.draw.line(surf, Playfield.gridlines_color, ((y + 1) * (PFsize[1] / self.grid_size[1]) + BT, BT), ((y + 1) * (PFsize[1] / self.grid_size[1]) + BT, PFsize[1] + BT), int(gridlines_thickness))
+        if config.debug.grid_index:
+            for x in range(self.grid_size[0]):
+                for y in range(self.grid_size[1]):
+                    ptext.draw(f'{x}, {y}', list([x, y] * (np.array(PFsize) / np.array(self.grid_size)) + np.array((BT, BT))), surf=surf)
 
         pygame.display.get_surface().blit(pygame.transform.smoothscale(surf, full_size / 2), field_pos)
 
         for pos, mino in {**self.minos, **{k: v for k, v in zip([tuple(m) for m in self.current_piece.minos], [self.current_piece.Mino_type] * len(self.current_piece.minos))}}.items():  # todo y'a du bon... et bcp de mauvais
-            relative_pos_to_field = (pos + np.array((1, 0))) * (np.array(PFsize) / np.array(self.grid_size)) + (0, BT)  # todo find the true reason i need to add this hardcoded offset + (0, BT)
+            relative_pos_to_field = (pos + np.array((2, 1))) * (np.array(PFsize) / np.array(self.grid_size)) + (0, BT)  # todo find the true reason i need to add this hardcoded offset + (0, BT)
             mino_size = np.array(PFsize) / np.array(self.grid_size) + (GT / 2, GT / 2)
-            try:
-                pygame.display.get_surface().blit(mino.render(mino_size // 2), (field_pos + (BT, BT) + relative_pos_to_field) // 2)
-            except AttributeError as a:
-                print(mino.__dict__)
-                raise a
-            if config.debug.grid_index: ptext.draw(f'{pos}', list(np.array(pos) * (np.array(PFsize) / np.array(self.grid_size)) + (BT, BT)), surf=surf)  # debug
+            pygame.display.get_surface().blit(mino.render(mino_size // 2), (field_pos + (BT, BT) + relative_pos_to_field) // 2)
 
     def is_legal(self, polymino: tetrominos.Polymino, excepted=None):
         """
@@ -106,7 +105,7 @@ class Playfield:
         for m in polymino.minos:
             try:
                 if self.get_mino(m) != Mino() or \
-                        not (self.FieldSize[0][0] < m[0] <= self.FieldSize[0][1] and self.FieldSize[1][0] < m[1] <= self.FieldSize[1][1]) \
+                        not (self.FieldSize[0][0] <= m[0] < self.FieldSize[0][1] and self.FieldSize[1][0] <= m[1] < self.FieldSize[1][1]) \
                         and m not in excepted:
                     return False
             except IndexError:
@@ -117,8 +116,10 @@ class Playfield:
         return (self.minos if minos is None else minos).get(tuple(pos), Mino() if default is None else default)
 
     def del_mino(self, pos, rep=None, minos=None):
-        if rep is None : (self.minos if minos is None else minos).pop(tuple(pos))
-        else: (self.minos if minos is None else minos)[tuple(pos)] = rep
+        if rep is None:
+            (self.minos if minos is None else minos).pop(tuple(pos))
+        else:
+            (self.minos if minos is None else minos)[tuple(pos)] = rep
 
     def set_mino(self, pos, mino, minos=None):
         (self.minos if minos is None else minos)[tuple(pos)] = mino
@@ -140,7 +141,7 @@ class Playfield:
 
     def clear_line(self, y, no_check=False):
         new_minos = {}
-        if sorted([i[0] for i, m in self.minos.items() if i[1] == y and m.solid]) == list(range(*(Playfield.FieldSize[0] + np.array((1, 1))))):
+        if sorted([i[0] for i, m in self.minos.items() if i[1] == y and m.solid]) == list(range(*(Playfield.FieldSize[0]))):
             for i, m in self.minos.items():
                 if m.placed and m.solid:
                     if i[1] > y:
