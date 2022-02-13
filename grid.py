@@ -36,6 +36,9 @@ class Playfield:
         self.next_queue = []
         self.controller: Controllers.Controller = controller
 
+        # settings :
+        self.special_moves = {}  # todo implement special moves detection
+
         # initialize fields
         self.has_switched = None
         self.held_piece = None
@@ -106,14 +109,14 @@ class Playfield:
                 return False
         return True
 
-    def get_mino(self, pos, default=None):
-        return self.minos.get(tuple(pos), Mino() if default is None else default)
+    def get_mino(self, pos, default=None, minos=None):
+        return (self.minos if minos is None else minos).get(tuple(pos), Mino() if default is None else default)
 
-    def del_mino(self, pos, rep=None):
-        self.minos[tuple(pos)] = Mino() if rep is None else rep
+    def del_mino(self, pos, rep=None, minos=None):
+        (self.minos if minos is None else minos)[tuple(pos)] = Mino() if rep is None else rep
 
-    def set_mino(self, pos, mino):
-        self.minos[tuple(pos)] = mino
+    def set_mino(self, pos, mino, minos=None):
+        (self.minos if minos is None else minos)[tuple(pos)] = mino
 
     def place_polymino(self, polymino: tetrominos.Polymino, solid=True, definitive=False, ret=False):
         """
@@ -122,8 +125,11 @@ class Playfield:
         :param solid: whether to have it be solid or not. useful for preview shadow
         :param ret: what should this have returned again?
         """
+        cleared_lines = 0
         for m in polymino.minos:
             self.del_mino(m, rep=Mino(polymino.color, solid, is_placed=definitive))
+            cleared_lines += 1 if self.clear_line(m[1]) is True else 0
+        print(cleared_lines)
 
     # def erase_mino(self, pos, rep=None):
     #     try:
@@ -134,15 +140,20 @@ class Playfield:
     def clear(self):
         self.minos = {}
 
-    def clear_lines(self):  # todo this don't work (dictionary changes size during iteration (makes sense)).
-        for i in self.minos:
-            line = [x for x, y in self.minos if y == i[1]]
-            if line == list(range(*(Playfield.FieldSize[0] + np.array((1, 1))))):
-                for j in self.minos:
-                    if j[1] < i[1]:
-                        self.set_mino([j[0], j[1] - 1], self.minos.pop(j))
-                    if j[1] == i[1]:
-                        self.del_mino(j)
+    def clear_line(self, y, no_check=False):
+        new_minos = self.minos.copy()
+        if sorted([i[0] for i in self.minos if i[1] == y]) == list(range(*(Playfield.FieldSize[0] + np.array((1, 1))))):
+            print(y)
+            for i, m in self.minos.items():
+                if not m.placed: continue
+                if i[1] == y:
+                    self.del_mino(i, minos=new_minos)
+                elif i[1] < y:  # todo this don't work, for some reason it seems to delete random minos???
+                    new_minos.pop(i)
+                    self.set_mino(i + np.array([0, 1]), m, minos=new_minos)
+            self.minos.clear()
+            self.minos = new_minos
+            return True
 
     def initialize(self):
         self.init_queue()
@@ -150,9 +161,14 @@ class Playfield:
         # todo see if further need for initialization... SUCH AS ASSIGNING DIFFERENT CONTROLLERS
 
     def init_queue(self, empty=False, shuffle=True):
-        self.queue = self.next_queue if self.next_queue else [piece(piece.spawn_pos) for piece in self.type_.pieces.copy()]
+        if len(self.next_queue):
+            q = self.next_queue
+        else:
+            q = [piece(piece.spawn_pos) for piece in self.type_.pieces.copy()]
+            random.shuffle(q)
+        self.queue = q
         self.next_queue = [piece(piece.spawn_pos) for piece in self.type_.pieces.copy()]
-        if shuffle: random.shuffle(self.queue)
+        random.shuffle(self.next_queue)
 
     def init_new_piece(self, pop=False):
         if pop: ret = self.queue.pop(0)
@@ -239,7 +255,7 @@ class Playfield:
                 case ['rotate', angle]:  # je crois avoir réussi?
                     if not held[0]:
                         self.current_piece.rotate({'cw': 90, 'ccw': -90, '180': 180}[angle], self)
-                case ['hold']:  # todo ok either this one is the worst or it's ultra easy either way i need to add queue and hold to the renderer
+                case ['hold']:  # todo OH SHIT WE STORING POS AND ROTATION IN THE HOLD QUEUE WE NEED TO RESET THAT
                     if not held[0] and not self.has_switched:
                         if self.held_piece:
                             transfer = self.held_piece
@@ -272,7 +288,7 @@ class Playfield:
     def current_piece(self) -> tetrominos.Polymino:
         return self.queue[0]
 
-    def __repr__(self):
+    def __repr__(self):  # todo this is broke
         return repr(self.minos)
 
 

@@ -34,7 +34,6 @@ while not done:
     # computing
     # todo add queue
     field.update()
-    field.clear_lines()
 
     # rendering
     screen.fill(screen_bg)
