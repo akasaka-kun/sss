@@ -129,7 +129,7 @@ class Playfield:
         for m in polymino.minos:
             self.del_mino(m, rep=Mino(polymino.color, solid, is_placed=definitive))
             cleared_lines += 1 if self.clear_line(m[1]) is True else 0
-        print(cleared_lines)
+        if cleared_lines: print('cleared', cleared_lines, 'lines')
 
     # def erase_mino(self, pos, rep=None):
     #     try:
@@ -137,13 +137,10 @@ class Playfield:
     #     except IndexError:
     #         warnings.warn(f'tried to erase a mino outside of the field at pos {pos}')
 
-    def clear(self):
-        self.minos = {}
-
     def clear_line(self, y, no_check=False):
         new_minos = self.minos.copy()
         if sorted([i[0] for i in self.minos if i[1] == y]) == list(range(*(Playfield.FieldSize[0] + np.array((1, 1))))):
-            print(y)
+            print('clearing line', y)
             for i, m in self.minos.items():
                 if not m.placed: continue
                 if i[1] == y:
@@ -156,24 +153,19 @@ class Playfield:
             return True
 
     def initialize(self):
-        self.init_queue()
         self.init_new_piece()
         # todo see if further need for initialization... SUCH AS ASSIGNING DIFFERENT CONTROLLERS
 
-    def init_queue(self, empty=False, shuffle=True):
-        if len(self.next_queue):
-            q = self.next_queue
-        else:
-            q = [piece(piece.spawn_pos) for piece in self.type_.pieces.copy()]
-            random.shuffle(q)
-        self.queue = q
-        self.next_queue = [piece(piece.spawn_pos) for piece in self.type_.pieces.copy()]
-        random.shuffle(self.next_queue)
+    def new_bag(self, empty=False, shuffle=True, bag=None):
+        bag = [piece(piece.spawn_pos) for piece in self.type_.pieces.copy()] if bag is None else bag
+        if shuffle: random.shuffle(bag)
+        if empty: self.queue.clear()
+        self.queue += bag
 
     def init_new_piece(self, pop=False):
         if pop: ret = self.queue.pop(0)
-        if len(self.queue) == 0:
-            self.init_queue()
+        while len(self.queue) < 7:
+            self.new_bag()
         self.time = 0
         self.gravity_timer = self.time
         self.gravity = config.gravity
