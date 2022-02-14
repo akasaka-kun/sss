@@ -90,7 +90,7 @@ class Playfield:
 
         pygame.display.get_surface().blit(pygame.transform.smoothscale(surf, full_size / 2), field_pos)
 
-        for pos, mino in {**self.minos, **{k: v for k, v in zip([tuple(m) for m in self.current_piece.minos], [self.current_piece.Mino_type] * len(self.current_piece.minos))}}.items():
+        for pos, mino in self.OnField_minos.items():
             relative_pos_to_field = (pos + np.array((2, 1))) * (np.array(PFsize) / np.array(self.grid_size)) + (0, BT)  # todo find the true reason i need to add this hardcoded offset + (0, BT)
             mino_size = np.array(PFsize) / np.array(self.grid_size) + (GT / 2, GT / 2)
             pygame.display.get_surface().blit(mino.render(mino_size // 2), (field_pos + (BT, BT) + relative_pos_to_field) // 2)
@@ -250,7 +250,7 @@ class Playfield:
                 case ['hold']:
                     if not held[0] and not self.has_switched:
                         if self.held_piece:
-                            transfer: tetrominos.Polymino = self.held_piece
+                            transfer = self.held_piece
                             transfer = transfer.__class__(transfer.__class__.spawn_pos)
                             # transfer = self.type_.pieces.copy()
                             self.queue.insert(0, transfer)
@@ -283,8 +283,18 @@ class Playfield:
     def current_piece(self) -> tetrominos.Polymino:
         return self.queue[0]
 
+    @property
+    def OnField_minos(self):
+        return {**self.minos, **self.current_piece.minos}
+
     def __repr__(self):  # todo this is broke
-        return repr(self.minos)
+        tppffs = np.transpose(Playfield.FieldSize)
+        repr_shape = tppffs[1] - tppffs[0]
+        repr_array = np.zeros(repr_shape, dtype=Mino)
+        repr_array.fill(Mino())
+        for i, m in self.OnField_minos.items():
+            repr_array[tuple(i - tppffs[0])] = m
+        return np.array2string(repr_array.transpose())
 
 
 if __name__ == '__main__':

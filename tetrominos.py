@@ -108,7 +108,6 @@ class Rotation_system:
 
 
 class Polymino:
-
     spawn_pos = None
 
     def __init__(self, pos: Sequence, rotation_table: Rotation_system.Rotation_table, kick_table: Rotation_system.Kick_table, color: str = '0', solid=True, placed=False):
@@ -127,7 +126,8 @@ class Polymino:
 
     @property
     def minos(self):
-        return np.add(([self.pos] * len(self.rotation_table.rotations[self.angle % 360])), self.rotation_table.rotations[self.angle % 360])
+        minos_pos = np.add(([self.pos] * len(self.rotation_table.rotations[self.angle % 360])), self.rotation_table.rotations[self.angle % 360])
+        return {k: v for k, v in zip([tuple(m) for m in minos_pos], [self.Mino_type] * len(minos_pos))}
 
     @property
     def Mino_type(self):

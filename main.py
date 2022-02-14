@@ -32,7 +32,6 @@ while not done:
             I.update()
 
     # computing
-    # todo add queue
     field.update()
 
     # rendering

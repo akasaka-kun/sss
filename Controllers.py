@@ -5,6 +5,8 @@ import config
 
 class Controller:
 
+    instances = None
+
     def __init__(self, controller, controls, instances):
         self.controller = controller
         self.actions = {}
